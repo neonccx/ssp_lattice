@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>1D Lattice Vibration</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:     #080c18; --surf:   #0f1526; --surf2:  #161e32;
+      --border: #1d2a44; --accent: #5b9cf6; --red:    #f06c6c;
+      --text:   #d8e4f5; --muted:  #5a6e8a; --code:   #4ade80;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Georgia", serif; background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 48px 16px 80px;
+    }
+    .w { width: 100%; max-width: 980px; }
+    header { text-align: center; margin-bottom: 48px; width: 100%; max-width: 980px; }
+    header h1 { font-size: 2.1rem; font-weight: normal; color: #eef4ff; letter-spacing: 0.02em; margin-bottom: 8px; }
+    .sub { font-size: 0.90rem; color: var(--muted); font-style: italic; margin-bottom: 20px; }
+    .tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .tag { background: var(--surf2); border: 1px solid var(--border); border-radius: 99px;
+           padding: 4px 14px; font-size: 0.76rem; color: var(--accent); font-family: monospace; }
+    .sec { width: 100%; max-width: 980px; font-size: 0.68rem; text-transform: uppercase;
+           letter-spacing: 0.14em; color: var(--accent); font-family: monospace;
+           border-bottom: 1px solid var(--border); padding-bottom: 7px; margin: 42px 0 20px; }
+    /* Video */
+    .vcard { width: 100%; max-width: 980px; background: var(--surf); border: 1px solid var(--border);
+             border-radius: 14px; overflow: hidden; box-shadow: 0 12px 48px rgba(0,0,0,0.6); margin-bottom: 12px; }
+    .vcard video { width: 100%; display: block; background: #000; }
+    .vcap { padding: 14px 22px; font-size: 0.85rem; color: var(--muted);
+            border-top: 1px solid var(--border); line-height: 1.7; }
+    .vcap strong { color: var(--text); }
+    /* Params */
+    .pcards { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px;
+              width: 100%; max-width: 980px; margin-bottom: 32px; }
+    @media(max-width:560px){ .pcards { grid-template-columns: 1fr 1fr; } }
+    .pc { background: var(--surf); border: 1px solid var(--border); border-radius: 10px;
+          padding: 16px 18px; text-align: center; }
+    .pc .v { font-size: 1.55rem; font-family: monospace; color: var(--accent); margin-bottom: 3px; }
+    .pc .l { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    /* Table */
+    .tbl-wrap { width: 100%; max-width: 980px; background: var(--surf); border: 1px solid var(--border);
+                border-radius: 12px; overflow: hidden; margin-bottom: 28px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { background: var(--surf2); color: var(--accent); font-family: monospace; font-size: 0.73rem;
+         letter-spacing: 0.09em; padding: 10px 16px; border-bottom: 2px solid var(--border); text-align: left; }
+    td { padding: 8px 16px; border-bottom: 1px solid var(--border); font-family: monospace; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+    /* Tabs */
+    .tabs { width: 100%; max-width: 980px; margin-bottom: 36px; }
+    .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tbtn { background: var(--surf2); border: 1px solid var(--border); border-radius: 8px;
+            padding: 7px 18px; font-size: 0.82rem; color: var(--muted);
+            cursor: pointer; font-family: monospace; transition: all 0.15s; }
+    .tbtn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tbtn:hover:not(.on) { border-color: var(--accent); color: var(--accent); }
+    .pane { display: none; }
+    .pane.on { display: block; }
+    /* PDF embed — use <img> rendered from server, or object with fixed height */
+    .pdf-wrap { width: 100%; background: var(--surf); border: 1px solid var(--border);
+                border-radius: 12px; overflow: hidden; }
+    .pdf-wrap object { width: 100%; height: 600px; display: block; border: none; }
+    .pdf-link { display: block; text-align: center; padding: 18px;
+                color: var(--accent); font-family: monospace; font-size: 0.88rem; text-decoration: none; }
+    .pdf-link:hover { text-decoration: underline; }
+    /* Theory */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+              width: 100%; max-width: 980px; margin-bottom: 20px; }
+    @media(max-width:640px){ .grid2 { grid-template-columns: 1fr; } }
+    .card { background: var(--surf); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; }
+    .card h3 { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.13em;
+               color: var(--accent); font-family: monospace; margin-bottom: 13px; }
+    .card p, .card li { font-size: 0.91rem; line-height: 1.80; color: var(--text); }
+    .card ul { padding-left: 17px; }
+    .card li { margin-bottom: 5px; }
+    code { background: #070c18; border-radius: 4px; padding: 1px 7px;
+           font-family: monospace; font-size: 0.86em; color: var(--code); }
+    footer { margin-top: 60px; font-size: 0.78rem; color: #222d42; text-align: center; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>1D Lattice Vibration</h1>
+  <p class="sub">Solid State Physics · Lattice Dynamics Simulation · Spring 2026</p>
+  <div class="tags">
+    <span class="tag">N = 10 atoms</span>
+    <span class="tag">K = m = a = 1</span>
+    <span class="tag">Velocity Verlet</span>
+    <span class="tag">Maxwell-Boltzmann IC</span>
+    <span class="tag">β = 0.1, 1, 2</span>
+  </div>
+</header>
+
+<div class="sec">§ Animation — Lattice Dynamics (β = 1.0)</div>
+<div class="vcard">
+  <video controls autoplay loop muted playsinline>
+    <source src="lattice_animation.mp4" type="video/mp4"/>
+    Your browser does not support the video tag.
+  </video>
+  <div class="vcap">
+    <strong>Top:</strong> atom displacements in real time. Colored dots = atoms; grey lines = springs. Horizontal axis = equilibrium position <em>na</em>, vertical = displacement <em>u<sub>n</sub></em>.
+    &ensp;<strong>Middle:</strong> Re(Q<sub>p</sub>) — real part of each normal mode. Blue positive, dark blue negative.
+    &ensp;<strong>Bottom:</strong> Im(Q<sub>p</sub>) — imaginary part. Red positive, dark red negative.
+    &ensp;ω<sub>p</sub> labelled below each bar. Mode p = 0 is the acoustic (zero-frequency) mode.
+  </div>
+</div>
+
+<div class="sec">§ Numerical Parameters</div>
+<div class="pcards">
+  <div class="pc"><div class="v">10</div><div class="l">Atoms N</div></div>
+  <div class="pc"><div class="v">0.05</div><div class="l">Time step dt</div></div>
+  <div class="pc"><div class="v">20</div><div class="l">Total time</div></div>
+  <div class="pc"><div class="v">800</div><div class="l">Steps (×3 stride)</div></div>
+</div>
+
+<div class="sec">§ Dispersion Relation &nbsp; ω<sub>p</sub> = 2 |sin(pπ/N)|</div>
+<div class="tbl-wrap">
+  <table>
+    <thead><tr><th>p</th><th>k = 2πp/Na</th><th>ω<sub>p</sub></th><th>Period 2π/ω</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>0.0000</td><td>0.0000</td><td>∞</td><td>Acoustic — uniform translation</td></tr>
+      <tr><td>1</td><td>0.6283</td><td>0.6180</td><td>10.17</td><td></td></tr>
+      <tr><td>2</td><td>1.2566</td><td>1.1756</td><td>5.34</td><td></td></tr>
+      <tr><td>3</td><td>1.8850</td><td>1.6180</td><td>3.88</td><td></td></tr>
+      <tr><td>4</td><td>2.5133</td><td>1.9021</td><td>3.30</td><td></td></tr>
+      <tr><td>5</td><td>3.1416</td><td>2.0000</td><td>3.14</td><td>Zone boundary — maximum frequency</td></tr>
+      <tr><td>6–9</td><td>—</td><td>—</td><td>—</td><td>Mirror of 4–1 by time-reversal symmetry</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec">§ (a) Displacement &amp; Velocity vs Time</div>
+<div class="tabs">
+  <div class="tab-bar">
+    <button class="tbtn on" onclick="show('disp','b01',this)">β = 0.1 (high T)</button>
+    <button class="tbtn"    onclick="show('disp','b10',this)">β = 1.0</button>
+    <button class="tbtn"    onclick="show('disp','b20',this)">β = 2.0 (low T)</button>
+  </div>
+  <div id="disp-b01" class="pane on">
+    <div class="pdf-wrap">
+      <object data="lattice_a_beta0.1.pdf" type="application/pdf">
+        <a class="pdf-link" href="lattice_a_beta0.1.pdf" target="_blank">📄 Open PDF — β = 0.1</a>
+      </object>
+    </div>
+  </div>
+  <div id="disp-b10" class="pane">
+    <div class="pdf-wrap">
+      <object data="lattice_a_beta1.0.pdf" type="application/pdf">
+        <a class="pdf-link" href="lattice_a_beta1.0.pdf" target="_blank">📄 Open PDF — β = 1.0</a>
+      </object>
+    </div>
+  </div>
+  <div id="disp-b20" class="pane">
+    <div class="pdf-wrap">
+      <object data="lattice_a_beta2.0.pdf" type="application/pdf">
+        <a class="pdf-link" href="lattice_a_beta2.0.pdf" target="_blank">📄 Open PDF — β = 2.0</a>
+      </object>
+    </div>
+  </div>
+</div>
+
+<div class="sec">§ (b) Normal Coordinates &amp; Momenta</div>
+<div class="tabs">
+  <div class="tab-bar">
+    <button class="tbtn on" onclick="show('norm','b01',this)">β = 0.1 (high T)</button>
+    <button class="tbtn"    onclick="show('norm','b10',this)">β = 1.0</button>
+    <button class="tbtn"    onclick="show('norm','b20',this)">β = 2.0 (low T)</button>
+  </div>
+  <div id="norm-b01" class="pane on">
+    <div class="pdf-wrap">
+      <object data="lattice_b_beta0.1.pdf" type="application/pdf">
+        <a class="pdf-link" href="lattice_b_beta0.1.pdf" target="_blank">📄 Open PDF — β = 0.1</a>
+      </object>
+    </div>
+  </div>
+  <div id="norm-b10" class="pane">
+    <div class="pdf-wrap">
+      <object data="lattice_b_beta1.0.pdf" type="application/pdf">
+        <a class="pdf-link" href="lattice_b_beta1.0.pdf" target="_blank">📄 Open PDF — β = 1.0</a>
+      </object>
+    </div>
+  </div>
+  <div id="norm-b20" class="pane">
+    <div class="pdf-wrap">
+      <object data="lattice_b_beta2.0.pdf" type="application/pdf">
+        <a class="pdf-link" href="lattice_b_beta2.0.pdf" target="_blank">📄 Open PDF — β = 2.0</a>
+      </object>
+    </div>
+  </div>
+</div>
+
+<div class="sec">§ Physical Background</div>
+<div class="grid2">
+  <div class="card">
+    <h3>Equations of Motion</h3>
+    <p>Nearest-neighbor harmonic coupling with periodic BC:<br/><br/>
+    <code>m ü_n = K(u_{n+1} − 2u_n + u_{n−1})</code><br/><br/>
+    Integrated with <strong>Velocity Verlet</strong> — a symplectic algorithm that exactly conserves energy for harmonic systems. Maximum phonon frequency <code>ω_max = 2</code> at zone boundary.</p>
+  </div>
+  <div class="card">
+    <h3>Normal Mode Transform</h3>
+    <p>Discrete Fourier transform diagonalizes the equations:<br/><br/>
+    <code>Q_p = (1/√N) Σ_n u_n exp(−ik_p na)</code><br/><br/>
+    Each <code>Q_p</code> evolves as an independent harmonic oscillator at ω<sub>p</sub>.
+    Implemented as <code>np.fft.fft(u) / √N</code>.</p>
+  </div>
+  <div class="card">
+    <h3>Initial Conditions</h3>
+    <ul>
+      <li>Displacements: <code>u_n ~ Uniform[−0.1, 0.1]</code></li>
+      <li>Velocities: <code>v_n ~ N(0, √(k_BT))</code></li>
+      <li>Center-of-mass drift removed</li>
+      <li>KE rescaled to exact equipartition <code>Nk_BT/2</code></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Temperature Effects</h3>
+    <ul>
+      <li><strong>β = 0.1</strong> (high T): large amplitudes, all modes strongly excited</li>
+      <li><strong>β = 1.0</strong>: intermediate, clear mode structure visible</li>
+      <li><strong>β = 2.0</strong> (low T): small amplitudes, each Q<sub>p</sub> shows clean single-frequency oscillation</li>
+    </ul>
+  </div>
+</div>
+
+<footer>Solid State Physics 2026 &nbsp;·&nbsp; Python · NumPy · Matplotlib</footer>
+
+<script>
+function show(group, id, btn) {
+  document.querySelectorAll('[id^="' + group + '-"]').forEach(el => el.classList.remove("on"));
+  document.getElementById(group + "-" + id).classList.add("on");
+  btn.closest(".tabs").querySelectorAll(".tbtn").forEach(b => b.classList.remove("on"));
+  btn.classList.add("on");
+}
+</script>
+</body>
+</html>
